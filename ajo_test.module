@@ -1,0 +1,78 @@
+<?php
+
+/**
+ * @file
+ * Module file for Feeds Fetcher Archive.
+ * TODO: Add plugins for more: parser and processor
+ */
+
+/**
+ * This plugin will need to test the following components
+ * Send file to the online processor
+ * Receive HTML back 
+ * Parse (the big one)
+ * Save as node
+ **/
+
+function ajo_test_menu() {
+  $items = array();
+
+  $items['ajo/test'] = array( //this creates a URL that will call this form at "examples/form-example"
+    'title' => 'Example Form', //page title
+    'description' => 'A form to mess around with.',
+    'page callback' => '_ajo_test_page', //this is the function that will be called when the page is accessed.  for a form, use drupal_get_form
+    'access callback' => TRUE
+  );
+  $items['ajo/transform'] = array( //this creates a URL that will call this form at "examples/form-example"
+    'title' => 'In which we make data into arrays and save it', //page title
+    'description' => 'A form to mess around with.',
+    'page callback' => '_ajo_test_page2', //this is the function that will be called when the page is accessed.  for a form, use drupal_get_form
+    'access callback' => TRUE
+  );
+
+  return $items;
+}
+
+// Register templates with theme layer//Content block
+function ajo_test_theme() {
+	return array(
+		'ajo_vomit' => array(
+			'template' => 'ajo_vomit',
+			'variables' => array(),
+			'path' => drupal_get_path('module', 'ajo_test').'/templates',
+    ),
+    'ajo_transform' => array(
+			'template' => 'ajo_transform',
+			'variables' => array(),
+			'path' => drupal_get_path('module', 'ajo_test').'/templates',
+		),
+	);
+}
+
+function _ajo_test_page(){		
+	//$path = drupal_get_path_alias();
+    //todo: array should contain variables we wish to pass along
+    $content .= theme('ajo_vomit', array());
+    //page templatestuff here?
+	return $content;
+}
+function _ajo_test_page2(){		
+    $content .= theme('ajo_transform', array());
+	return $content;
+}
+
+/*
+An AJAX HTTP error occurred. 
+HTTP Result Code: 200 Debugging information follows. 
+Path: /drupal/batch?id=22&op=do StatusText: OK 
+ResponseText: object(FeedsFileFetcherResult)[75] 
+protected 'raw' => string '' (length=0) 
+protected 'file_path' => 
+  string 'temporary://feeds/zip_test/OneDrive_0_1/amp_um_flower.jpeg' (length=58) 
+object(FeedsFileFetcherResult)[5] 
+protected 'raw' => string '' (length=0) 
+protected 'file_path' => 
+  string 'temporary://feeds/zip_test/OneDrive_0_1/book reviews part 2.docx' (length=64)
+   {"status":true,"percentage":"100","message":""}
+
+*/

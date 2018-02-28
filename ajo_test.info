@@ -1,0 +1,17 @@
+name = "AJO Tester"
+description = "Tests various AJO functionalities"
+core = "7.x"
+package = "AJO"
+
+dependencies[] = ctools
+dependencies[] = feeds
+
+
+;Requires declarations for files that contain class declarations
+;files[] = plugins/FeedsArchiveFileFetcher.inc
+;files[] = plugins/FeedsAJOParser.inc
+;files[] = plugins/FeedsAJOProcessor.inc
+
+;TODO- other libraries
+;files[] = libraries/ParserAJO.inc
+
