@@ -3,46 +3,8 @@
 /**
  * @file
  * Module file for Feeds Fetcher Archive.
- * TODO: Add plugins for more: parser and processor
  */
 
-/*
-field_article_summary - text
-field_article_authors - term reference
-	field_body - long text
-field_article_inside - entire inside the article?
-  -field_article_key_info - long text
-  -field_article_figures_tables - long text
-  -field_article_multimedia - long text
-  -field_references - long text
-field_article_medium_image - image
-field_article_big_image - image
-field_article_topics - term ref
-  field_article_sections - term ref
-field_article_doi - text
-
-  field_article_teaser - check?
-  
-  field_display_mode
-  	field_article_type - term reference, list. should be set to Article
-
-  required: category- article type and headline (title)
-
-*/
-
-
-/* taxonomy term ref nonsense
-
-This dude at the bottom, Cesar has figured it out?
-https://www.drupal.org/project/entity/issues/2378611
-
-
-$node=node_load($nid);
-    $tags = array();
-    foreach ($node->field_tags['und'] as $item) {
-      $tags[$item['tid']] = isset($item['taxonomy_term']) ?  $item['taxonomy_term'] : taxonomy_term_load($item['tid']);
-    }
-*/
 
 /**
  * This plugin will need to test the following components
