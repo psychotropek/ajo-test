@@ -20,7 +20,7 @@ $item['digital_object_id'] = "45ADg";
 //a body which is html, and/or a filename which is something like something_figure1.png
 //a caption, which should be rendered as html
 
-//TODO: get end of figure title and such in parser- file name
+//TODO: get end of figure title and such in parser- file name with contains_substr
 
 //then munge them all together later...add title figure 1? see other formatting? check escape values
 //For each figure, make a div...
@@ -31,14 +31,14 @@ $figures_html = "";
 
 
 //todo: check format- will it be comma delimited?
-$item['authors'] = "Edwin Lee, Leila Baydur, Arjen Anduve";
-$item['topics'] = "Shoulder, Knee, Foot";
+$item['authors'] = "Brian E. Ward, MD, Joshua S. Dines, MD";
+//check how to add new subcategories-where should they fall under? that's their own business
+$item['topics'] = "Knee, Imaging";
 $item['sections'] = "Surgery, Research, Studies";
 
-//TODO: check uid? or just use a given admin one?
 $values = array(
     'type' => 'Article',
-    'uid' => $user->uid,
+    'uid' => 1,
     'status' => 1,
     'comment' => 1,
     'promote' => 0,
@@ -50,32 +50,43 @@ $ewrapper = entity_metadata_wrapper('node', $entity);
 $ewrapper->title->set($item['title']);
 
 // Setting the body is a bit different from other properties or fields
-// because the body can have both its complete value and its
-// summary
 $ewrapper->body->set(array('value' => $item['body']));
+//n.b. body isn't set with summary, it's a different field
 $ewrapper->body->summary->set($item['summary']);
-//TODO: check on what the different summaries are.
 $ewrapper->field_article_summary->set($item['summary']);
 
 //Other fields that are text
 //TODO: install feature on local installation
 $ewrapper->field_article_teaser->set($item['teaser']);
 $ewrapper->field_article_doi->set($item['digital_object_id']);
-//TODO: Author and Disclosure Information	field_article_legacy_authors	is correct?
+//n.b.Legacy authors is a rich text that contains author disclosure
 $ewrapper->field_article_legacy_authors->set($item['author_disclosure']);
 
-//Image fields
-//TODO: how to set an image? it should have subfields? or captions? how does that work? 
-//also filename? just set filename? set caption? how does that even work
+//Image fields: field type is image and
+
+  //todo: check if we need path correct (not just filename). If possible filename collisions, prefix file names in fetcher
+  //also check if entity type is file or image
+
+  $file_efq = new EntityFieldQuery();
+  $file_efq->entityCondition('entity_type', 'file')
+    ->propertyCondition('filename', $filename);
+  $file_efq_result = $file_efq->execute();
+  if (count($file_efq_result)) {
+    // This will only add the first match from EFQ for this filename
+    $fid = array_pop($file_efq_result['file'])->fid;
+  }
+  // Set both file and title separately.
+  $image_obj = file_load($fid);
+  $ewrapper->field_article_medium_image->file = $image_obj;
+  //todo: get title from caption- ['big_image']['title'] 
+  $ewrapper->field_article_medium_image->title = $title;
+
 //$ewrapper->field_article_medium_image->set();
 //$ewrapper->field_article_big_image->set();
 
 
-//TODO: take home points field name? Is that part of key info?
-$ewrapper->field_article_take_home_points->set($item['take_home_points']);
-
-//Inside the article- all long text fields
-$ewrapper->field_article_key_info->set("blee long text key info");
+//Inside the article- all long text fields. Key Info = Take Home Points
+$ewrapper->field_article_key_info->set($item['take_home_points']);
 
 //TODO: Figures and tables requires several fields. We're going to have to add something in the $items
 $ewrapper->field_article_figures_tables->set("Code that deals with figures and tables. Will be munged from several things");
@@ -83,11 +94,13 @@ $ewrapper->field_article_figures_tables->set("Code that deals with figures and t
 $ewrapper->field_article_multimedia->set("some code here that inserts multimedia");
 $ewrapper->field_references->set($item['references']);
 
-//TODO: authors, topics, and sections- what are the machine name taxonomies?
 
+//Term reference and taxonomy fields
 $authors_vocab = taxonomy_vocabulary_machine_name_load('authors');
 $vid = $authors_vocab->vid;
 $authors_string = $item['authors'];
+//"Brian E. Ward, MD", "Joshua S. Dines, MD"
+//note that you type in just Brian E. Ward MD and it inserts the quotes on the form. Don't worry about it inless it barfs
 $authors_array = explode(', ', $authors_string);
 $tid_array = array();
 foreach($authors_array as $author) {
@@ -96,6 +109,8 @@ foreach($authors_array as $author) {
 }
 $wrapper->field_article_authors->set($tid_array);
 
+//n.b. we don't need to worry about taxonomic subcategories. They should add automagically
+//Insertion is another story, really
 $topics_vocab = taxonomy_vocabulary_machine_name_load('topics');
 $vid = $topics_vocab->vid;
 $topics_string = $item['topics'];
@@ -144,16 +159,6 @@ field_article_subhead	Will there be a subhead?
 Author Bio	field_author_bio	
 Article Source	field_article_source
 
-
-//all the stuff from take home points?
-Inside the Article	field_article_inside	
-OR
-field_article_key_info	Long text	
-*take home points?
-
-Check this
-Author and Disclosure Information	field_article_legacy_authors	Long text
-
 field_article_issue	Entity Reference	
 field_article_page_number	Text- is this even used?	
 field_article_citation_override  Text
@@ -186,6 +191,12 @@ function custom_create_taxonomy_term($name, $vid) {
   }
 
 
-
+//todo: move to processor or parser
+  function contains_substr($mainStr, $str, $loc = false) {
+    if ($loc === false) return (strpos($mainStr, $str) !== false);
+    if (strlen($mainStr) < strlen($str)) return false;
+    if (($loc + strlen($str)) > strlen($mainStr)) return false;
+    return (strcmp(substr($mainStr, $loc, strlen($str)), $str) == 0);
+}
 
 ?>
