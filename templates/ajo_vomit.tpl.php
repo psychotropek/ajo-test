@@ -1,9 +1,111 @@
 <div class="content" id="ajo-vomit">
 <h1 class="title"><?php echo $title;?></h1>
 <?php
+
+$path = drupal_get_path('module', 'ajo_test')."/lee118.png";
+$my_xml = exif_custom_get_xmp($path);
+var_dump($my_xml['XMP:xmpmeta:rdf:description:description:alt:li']);
+//field seems to be stored in
+//XMP:xmpmeta:rdf:description:description:alt:li
+
+
+
+function exif_custom_get_xmp($image) {
+    $content = file_get_contents($image);
+    $xmp_data_start = strpos($content, '<x:xmpmeta');
+    $xmp_data_end = strpos($content, '</x:xmpmeta>');
+    if ($xmp_data_start === FALSE || $xmp_data_end === FALSE) {
+      return array();
+    }
+    $xmp_length = $xmp_data_end - $xmp_data_start;
+    $xmp_data = substr($content, $xmp_data_start, $xmp_length + 12);
+    unset($content);
+    $xmp = simplexml_load_string($xmp_data);
+    if ($xmp === FALSE) {
+      return array();
+    }
+    // $namespaces = $xmp->getDocNamespaces(true);
+    // $fields = array();
+    // foreach ($namespaces as $namespace) {
+    // $fields[] = exif_custom_xml_recursion($xmp->children($namespace));
+    $field_data = array();
+    exif_custom_xml_recursion($xmp, $field_data, 'XMP');
+   
+    return $field_data;
+  }
+  
+  function exif_custom_xml_recursion($obj, array &$fields, $name) {
+    $namespace = $obj->getDocNamespaces(TRUE);
+    $namespace[NULL] = NULL;
+  
+    $children = array();
+    $attributes = array();
+  
+    $text = trim((string) $obj);
+    if (strlen($text) === 0) {
+      $text = NULL;
+    }
+  
+    if (strtolower((string) $obj->getName()) == "bag") {
+      // @todo Add support for bags of objects other than just text?
+      $childValues = array();
+      $objChildren = $obj->children("rdf", TRUE);
+      foreach ($objChildren as $child) {
+        $childValues[] = trim((string) $child);
+      }
+      if (count($childValues) > 0) {
+        $fields[$name] = $childValues;
+      }
+    }
+    else {
+      $name = $name . ':' . strtolower((string) $obj->getName());
+  
+      // Get info for all namespaces.
+      if (is_object($obj)) {
+        foreach ($namespace as $ns => $nsUrl) {
+          // Attributes.
+          $objAttributes = $obj->attributes($ns, TRUE);
+          foreach ($objAttributes as $attributeName => $attributeValue) {
+            $attribName = strtolower(trim((string) $attributeName));
+            $attribVal = trim((string) $attributeValue);
+            if (!empty($ns)) {
+              $attribName = $ns . ':' . $attribName;
+            }
+            $attributes[$attribName] = $attribVal;
+          }
+  
+          // Children.
+          $objChildren = $obj->children($ns, TRUE);
+          foreach ($objChildren as $childName => $child) {
+            $childName = strtolower((string) $childName);
+            if (!empty($ns)) {
+              $childName = $ns . ':' . $childName;
+            }
+            $children[$childName][] = exif_custom_xml_recursion($child, $fields, $name);
+          }
+        }
+      }
+      if (!is_null($text)) {
+        $fields[$name] = $text;
+      }
+    }
+  
+    return array(
+      'name' => $name,
+      'text' => html_entity_decode($text),
+      'attributes' => $attributes,
+      'children' => $children,
+    );
+  }
+
+
+
+
+
 //$handle = fopen(drupal_get_path('module', 'ajo_test').'/dummy-article-for-import.html', "r");
 
 //h6 as well. will be at end of document
+/*
 $handle = file_get_contents(drupal_get_path('module', 'ajo_test').'/dummy-article-for-import.html');
 $handle = preg_replace("%\t%","",$handle);
 $handle = preg_replace("%<p>(\s)*&#xa0;(\s)*</p>%","",$handle);
@@ -60,13 +162,12 @@ var_dump($sections_match);
 
 //digital object id
 preg_match_all("%<h6>\s*Digital Object ID\s*</h6>(((?!<h)(.|\n))*)%",$handle,$doi_match,PREG_PATTERN_ORDER);
-var_dump($doi_match);
+var_dump($doi_match); */
 
 //n.b. how will excel files get parsed? Just as HTML, see if you can do that.
 
 ?>
 
 
-?>
 
 </div>
