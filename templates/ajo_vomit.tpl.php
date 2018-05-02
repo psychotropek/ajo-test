@@ -1,14 +1,107 @@
 <div class="content" id="ajo-vomit">
 <h1 class="title"><?php echo $title;?></h1>
 <?php
+require DRUPAL_ROOT.'/sites/all/vendor/autoload.php';
 
-$path = drupal_get_path('module', 'ajo_test')."/lee118.png";
-$my_xml = exif_custom_get_xmp($path);
-var_dump($my_xml['XMP:xmpmeta:rdf:description:description:alt:li']);
+//$path = drupal_get_path('module', 'ajo_test')."/figure1.jpg";
+//$my_xml = exif_custom_get_xmp($path);
+//var_dump($my_xml['XMP:xmpmeta:rdf:description:description:alt:li']);
 //field seems to be stored in
 //XMP:xmpmeta:rdf:description:description:alt:li
 
+$file = "fortier_2018_04_article_html.html";
 
+/* $client = new GuzzleHttp\Client(['base_uri' => 'https://api.docconverter.pro','verify' => false]);
+$res = $client->post('/Token', [ 'form_params' => [ 'grant_type' => 'password', 'username' => 'chris@quillandcode.com', 'password' => 'AJO_d3v070p'] ]);
+$statusCode = $res->getStatusCode();
+if ( $statusCode != 200 )
+{
+  echo 'Invalid request status code: ' . $statusCode;
+  die();
+}
+$body = (string)$res->getBody();
+$data = json_decode($body);
+$token = $data->access_token;
+// $token can be stored in site cache or database, please check expiry date ($data->expires_in) before using token again (2 weeks expiration time)
+
+$table_match = 1;
+$docconverterTemplate = "AJO test template";
+if ($table_match > 0) 
+{
+  $docconverterTemplate = "AJO table template";
+}
+$formData = array();
+$formData[] = [ 'name' => 'file_name', 'contents' => fopen($file, 'r')];
+$formData[] = [ 'name' => 'template', 'contents' => $docconverterTemplate];
+$formData[] = [ 'name' => 'returnHtml', 'contents' => 'true'];
+$formData[] = [ 'name' => 'returnData', 'contents' => 'true'];
+
+$response = $client->request('POST', '/api/converter/convertdoc', [
+  'headers' => [ 'Authorization' => 'Bearer ' . $token ],
+  'multipart' => $formData,
+]);
+          
+$test = $response->getBody();
+$handle = (string)$test; */
+
+$handle = file_get_contents(drupal_get_path('module', 'ajo_test').'/'.$file);
+if ($table_match > 0) 
+{
+  $table_array = array();
+  preg_match_all("%(.*)<table>%",$handle,$above_table,PREG_PATTERN_ORDER);
+  $table_array['above_table'] = $above_table;
+  preg_match_all("%(<table>\n(.*)\n</table>)%",$handle,$table_data,PREG_PATTERN_ORDER);
+  $table_array['table_data'] = $table_data;
+  preg_match_all("%</table>\n(.*)>%",$handle,$table_caption,PREG_PATTERN_ORDER);
+  $table_array['table_caption'] == $table_caption;
+  preg_match_all("%(table)|(Table)(.*)_%",$path_parts['filename'],$table_index,PREG_PATTERN_ORDER);
+  $item['tables'][$table_index] = $table_array;
+}
+else
+{
+  $handle = preg_replace("%\t%","",$handle);
+  $handle = preg_replace("%<p>(\s)*&#xa0;(\s)*</p>%","",$handle);
+
+  preg_match_all("%<h1>\s*(.*)\s*</h1>%",$handle,$title,PREG_PATTERN_ORDER);
+  $item['title'] = trim($title[1][0]);
+
+  preg_match_all("%<h6>\s*Authors\s*</h6>\s*<p>\s*(.*)\s*</p>%",$handle,$authors_match,PREG_PATTERN_ORDER);
+  $item['authors'] = trim($authors_match[1][0]);
+
+  //todo: don't have yet
+  preg_match_all("%<h2>\s*Summary\s*</h2>(((?!<h)(.|\n))*)%",$handle,$summary_match,PREG_PATTERN_ORDER);
+  $item['summary'] = $summary_match;
+
+  //todo: don't have yet
+  preg_match_all("%<h2>\s*Teaser\s*</h2>(((?!<h)(.|\n))*)%",$handle,$teaser_match,PREG_PATTERN_ORDER);
+  $item['teaser'] = $teaser_match;
+
+  preg_match_all("%<h2>\s*Take-Home Points\s*</h2>\s*(((?!<h)(.|\n))*)\s*%",$handle,$points_match,PREG_PATTERN_ORDER);
+  $item['take_home_points'] = trim($points_match[1][0]);
+  
+//todo: reformat, not working
+  //preg_match_all("%</ul>(\s|n)*<h2>(\s|.)*</h2>((?!<h)(.|\n))*%",$handle,$body_match,PREG_PATTERN_ORDER);
+  preg_match_all("%*<h2>\s*Body(\s|.)*</h2>\s*((.|\n))*<h2>\s*References\s*</h2>%",$handle,$body_match,PREG_PATTERN_ORDER);
+  $item['body'] = $body_match;
+  
+  //todo: not working, find marker for end of file
+  preg_match_all("%<h2>\s*References\s*</h2>\s*(((?!<h)(.|\n))*)%",$handle,$ref_match,PREG_PATTERN_ORDER);
+  $item['references'] = $ref_match;
+
+  preg_match_all("%<h6>\s*Topics\s*</h6>\s*<p>\s*(((?!<h)(.|\n))*)\s*</p>%",$handle,$topics_match,PREG_PATTERN_ORDER);
+  $item['topics'] = $topics_match[1][0];
+    //needs element [0][1][0]
+
+  preg_match_all("%<h6>\s*Sections\s*</h6>\s*<p>\s*(((?!<h)(.|\n))*)\s*</p>%",$handle,$sections_match,PREG_PATTERN_ORDER);
+  $item['sections'] = trim($sections_match[1][0]);
+
+
+  preg_match_all("%<h6>\s*Digital Object ID\s*</h6>\s*<p>\s*(((?!<h)(.|\n))*)\s*</p>%",$handle,$doi_match,PREG_PATTERN_ORDER);
+  $item['digital_object_id'] = trim($doi_match[1][0]);
+    //needs element [0] [0] [1]
+
+var_dump($item);
+}
 
 function exif_custom_get_xmp($image) {
     $content = file_get_contents($image);
