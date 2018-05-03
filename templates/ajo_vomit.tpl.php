@@ -95,18 +95,17 @@ else
   preg_match_all("%<h2>\s*Take-Home Points\s*</h2>\s*(((?!<h)(.|\n))*)\s*%",$handle,$points_match,PREG_PATTERN_ORDER);
   $item['take_home_points'] = trim($points_match[1][0]);
   
-//todo: reformat, not working
-//todo: I am suspicious of what kind of characters that are not . or \s are in here
-  preg_match_all("@<h2>\s*Body\s*</h2>(.|\n)*<h2>\s*References\s*</h2>@",$handle,$body_match,PREG_PATTERN_ORDER);
-  $item['body'] = $body_match;
-  var_dump($body_match);
+  preg_match_all("@<h2>\s*Body\s*</h2>(.*)<h2>\s*References\s*</h2>@s",$handle,$body_match,PREG_PATTERN_ORDER);
+  $item['body'] = $body_match[1][0];
+
   
   //todo: not working, find marker for end of file
-  preg_match_all("%<h2>\s*References\s*</h2>(.)*</div>%",$handle,$ref_match,PREG_PATTERN_ORDER);
+  preg_match_all("%<h2>\s*References\s*</h2>(.*)</div>%s",$handle,$ref_match,PREG_PATTERN_ORDER);
 
   //var_dump(preg_match("%<h2>\s*References\s*</h2>(.)*\s*</div>%",$handle));
 
   $item['references'] = $ref_match;
+  var_dump($ref_match[1][0]);
 
   preg_match_all("%<h6>\s*Topics\s*</h6>\s*<p>\s*(((?!<h)(.|\n))*)\s*</p>%",$handle,$topics_match,PREG_PATTERN_ORDER);
   $item['topics'] = $topics_match[1][0];

@@ -29,6 +29,12 @@ function ajo_test_menu() {
     'page callback' => '_ajo_test_page2', //this is the function that will be called when the page is accessed.  for a form, use drupal_get_form
     'access callback' => TRUE
   );
+  $items['ajo/regex'] = array( //this creates a URL that will call this form at "examples/form-example"
+    'title' => 'In which we make data into arrays and save it', //page title
+    'description' => 'A form to mess around with.',
+    'page callback' => '_ajo_test_page3', //this is the function that will be called when the page is accessed.  for a form, use drupal_get_form
+    'access callback' => TRUE
+  );
 
   return $items;
 }
@@ -45,7 +51,12 @@ function ajo_test_theme() {
 			'template' => 'ajo_transform',
 			'variables' => array(),
 			'path' => drupal_get_path('module', 'ajo_test').'/templates',
-		),
+    ),
+    'regex_purgatory' => array(
+			'template' => 'regex_purgatory',
+			'variables' => array(),
+			'path' => drupal_get_path('module', 'ajo_test').'/templates',
+    ),
 	);
 }
 
@@ -59,6 +70,10 @@ function _ajo_test_page(){
 function _ajo_test_page2(){		
     $content .= theme('ajo_transform', array());
 	return $content;
+}
+function _ajo_test_page3(){		
+  $content .= theme('regex_purgatory', array());
+return $content;
 }
 
 /*
