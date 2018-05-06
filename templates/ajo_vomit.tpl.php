@@ -9,10 +9,13 @@ require DRUPAL_ROOT.'/sites/all/vendor/autoload.php';
 //field seems to be stored in
 //XMP:xmpmeta:rdf:description:description:alt:li
 
-$file = "fortier_2018_04_article_html.html";
+//$file = "fortier_2018_04_table_html.html";
+$file = (drupal_get_path('module', 'ajo_test').'/'."Fortier_2018_04_article.docx");
 $table_match = 0;
+//$table_match = 1;
 
-/* $client = new GuzzleHttp\Client(['base_uri' => 'https://api.docconverter.pro','verify' => false]);
+
+$client = new GuzzleHttp\Client(['base_uri' => 'https://api.docconverter.pro','verify' => false]);
 $res = $client->post('/Token', [ 'form_params' => [ 'grant_type' => 'password', 'username' => 'chris@quillandcode.com', 'password' => 'AJO_d3v070p'] ]);
 $statusCode = $res->getStatusCode();
 if ( $statusCode != 200 )
@@ -25,7 +28,6 @@ $data = json_decode($body);
 $token = $data->access_token;
 // $token can be stored in site cache or database, please check expiry date ($data->expires_in) before using token again (2 weeks expiration time)
 
-$table_match = 1;
 $docconverterTemplate = "AJO test template";
 if ($table_match > 0) 
 {
@@ -43,10 +45,10 @@ $response = $client->request('POST', '/api/converter/convertdoc', [
 ]);
           
 $test = $response->getBody();
-$handle = (string)$test; */
+$handle = (string)$test; 
 
-$handle = file_get_contents(drupal_get_path('module', 'ajo_test').'/'.$file);
-//todo: check for nonsense characters such as 
+//$handle = file_get_contents(drupal_get_path('module', 'ajo_test').'/'.$file);
+
 $handle = preg_replace("%(\t|\r|\v|\f)%","",$handle);
 
 $handle = preg_replace("%<p>(\s)*&#xa0;(\s)*</p>%","",$handle);
@@ -56,28 +58,24 @@ $handle = preg_replace("%<p>(\s)*<em>&#xa0;</em>(\s)*</p>%","",$handle);
 
 if ($table_match > 0) 
 {
-
   $table_array = array();
   preg_match_all("%<body>\s*<div>(.|\n)*<table>%",$handle,$above_table,PREG_PATTERN_ORDER);
-  //var_dump($above_table);
-  //todo: plenty of trimming at the end for \n?
   $table_array['above_table'] = trim($above_table[0][0]);
   preg_match_all("%(<table>((.|\n*)*)</table>)%",$handle,$table_data,PREG_PATTERN_ORDER);
-  //var_dump($table_data);
   $table_array['table_data'] = $table_data[0][0];
   preg_match_all("%</table>(.|\n)*</div>%",$handle,$table_caption,PREG_PATTERN_ORDER);
-  //var_dump($table_caption);
-  $table_array['table_caption'] = $table_caption[0][0];
-  preg_match_all("%(table)|(Table)(.*)_%",$path_parts['filename'],$table_index,PREG_PATTERN_ORDER);
-  //todo: table_index will not be a thing that makes any sense.
-  //$item['tables'][$table_index] = $table_array;
+  $table_array['table_caption'] = trim($table_caption[0][0]);
+  
+  //preg_match_all("%(table)|(Table)(.*)_%",$path_parts['filename'],$table_index,PREG_PATTERN_ORDER);
+  //todo: table_index must be specified in the file name
+  //var_dump($table_index);
 
-  var_dump($table_array);
+  $item['tables'][] = $table_array;
+  //$item['tables'][$table_index] = $table_array;
 }
+
 else
 {
-  //var_dump($handle);
-
   preg_match_all("%<h1>\s*(.*)\s*</h1>%",$handle,$title,PREG_PATTERN_ORDER);
   $item['title'] = trim($title[1][0]);
 
@@ -98,14 +96,8 @@ else
   preg_match_all("@<h2>\s*Body\s*</h2>(.*)<h2>\s*References\s*</h2>@s",$handle,$body_match,PREG_PATTERN_ORDER);
   $item['body'] = $body_match[1][0];
 
-  
-  //todo: not working, find marker for end of file
-  preg_match_all("%<h2>\s*References\s*</h2>(.*)</div>%s",$handle,$ref_match,PREG_PATTERN_ORDER);
-
-  //var_dump(preg_match("%<h2>\s*References\s*</h2>(.)*\s*</div>%",$handle));
-
-  $item['references'] = $ref_match;
-  var_dump($ref_match[1][0]);
+  preg_match_all("%<h2>\s*References\s*</h2>(.*)\Z%s",$handle,$ref_match,PREG_PATTERN_ORDER);
+  $item['references'] = $ref_match[1][0];
 
   preg_match_all("%<h6>\s*Topics\s*</h6>\s*<p>\s*(((?!<h)(.|\n))*)\s*</p>%",$handle,$topics_match,PREG_PATTERN_ORDER);
   $item['topics'] = $topics_match[1][0];
@@ -116,7 +108,7 @@ else
   preg_match_all("%<h6>\s*Digital Object ID\s*</h6>\s*<p>\s*(((?!<h)(.|\n))*)\s*</p>%",$handle,$doi_match,PREG_PATTERN_ORDER);
   $item['digital_object_id'] = trim($doi_match[1][0]);
 
-//var_dump($item);
+var_dump($item);
 }
 
 function exif_custom_get_xmp($image) {
@@ -133,10 +125,6 @@ function exif_custom_get_xmp($image) {
     if ($xmp === FALSE) {
       return array();
     }
-    // $namespaces = $xmp->getDocNamespaces(true);
-    // $fields = array();
-    // foreach ($namespaces as $namespace) {
-    // $fields[] = exif_custom_xml_recursion($xmp->children($namespace));
     $field_data = array();
     exif_custom_xml_recursion($xmp, $field_data, 'XMP');
    
